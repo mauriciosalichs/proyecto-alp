@@ -1,0 +1,51 @@
+/estilos
+
+<Estandar> # La que se usa por defecto si no se indica una en el cuerpo
+tamaño 20
+fuente TimesNewRoman
+color Negro
+alineacion Izquierda Centro
+
+<FuenteA>
+tamaño 23
+fuente Arial
+color Rojo
+alineacion Centro Centro
+
+<FuenteB>
+hereda FuenteA
+tamaño 13
+
+<FuenteC>
+color Verde
+
+/titulo Texto de prueba.
+
+/secciones
+
+~ Capitulo A.
+
+Parrafo *de prueba*.
+
+<FuenteA> /items
+: Ejemplo _de texto en cursiva_.
+: Ejemplo de [http://www.google.com un link].
+: Un *_ultimo_* ejemplo.
+
+Otro parrafo de prueba.
+
+~ Segundo capitulo.
+
+/imagen
+face.png
+
+~ ~ Primer subseccion
+
+~ ~ Segunda subseccion
+
+~ ~ ~ Otra subseccion.
+
+~ ~ ~ Y una mas.
+
+
+
