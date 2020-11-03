@@ -134,7 +134,7 @@ italic = do oneOf "_"
             return (Italic t)
 
 characters :: P String
-characters = many1 $ noneOf "\\\n~[]*_"
+characters = many1 $ noneOf "\\\n~[]*_;"
             
 simpleText :: P FormattedText
 simpleText = do
@@ -177,6 +177,7 @@ tableRow = do
             xs <- many (do  reserved ";"
                             x' <- formattedTextL
                             return x')
+            reserved "\n"
             return (Tr s (x:xs))
 
 table :: P SectionBody

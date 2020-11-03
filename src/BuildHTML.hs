@@ -19,10 +19,19 @@ items :: [Text] -> String
 items [] = ""
 items (x:xs) = "<li>" ++ text x ++"</li>\n" ++ items xs
 
+tableRow :: [Text] -> String
+tableRow [] = ""
+tableRow (x:xs) = "<td>" ++ text x ++ "</td>" ++ tableRow xs
+
+table :: [TableRow] -> String
+table [] = ""
+table ((Tr _ cs) : ts) = "<tr>" ++ tableRow cs ++ "</tr>" ++ table ts
+
 sectionBody :: [Int] -> SectionBody -> String
 sectionBody _ (Paragraph p) = "<p>" ++ text p ++ "</p>\n"
 sectionBody _ (Items i) = "<ul>\n" ++ items i ++ "</ul>\n"
 sectionBody _ (Image i) = "<img src=\"" ++ i ++ "\" alt\"\">\n"
+sectionBody _ (Table t) = "<table>\n" ++ table t ++ "</table>\n"
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
