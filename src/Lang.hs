@@ -14,7 +14,10 @@ type Allignment = (HAllignment, VAllignment)
 -- | Tipo de Estilos
 data Style = 
       None  
-    | St { heredits :: StyleName, size :: Size, font :: Font, color :: Color, allignment :: (String, String) }
+    | St { size :: Size, font :: Font, color :: Color, allignment :: (String, String) }
+
+type StyleParameters = [(String,String)]
+type StyleDict = [(StyleName, StyleParameters)]
 
 data FormattedText = 
     SimpleText String
