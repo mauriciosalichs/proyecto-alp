@@ -2,6 +2,7 @@ module Parse (fileParse) where
 
 import Lang
 import Text.Parsec hiding (runP)
+--import Text.Parsec.Char
 import Data.Char ( isNumber, ord )
 import qualified Text.Parsec.Token as Tok
 import Text.ParserCombinators.Parsec.Language ( GenLanguageDef(..), emptyDef )
@@ -18,12 +19,8 @@ lexer = Tok.makeTokenParser $
         emptyDef {
          commentLine    = "#",
         reservedNames = [    -- comandos
-                          "/estilos", "/titulo", "/subtitulo",
-                          "/secciones", "/items", "/tabla", "/imagen", "/espacio",
-                             -- parametros de estilos
-                          "tamaño", "fuente", "hereda",
-                          "color", "alineacion","\n"],
-         reservedOpNames = ["<",">",":","*","_","~",";","%"]
+                          "/estilos", "/titulo", "/subtitulo","/secciones", "/items", "/tabla", "/imagen", "/espacio","\n"],
+         reservedOpNames = ["<",">",":","*","_","~",";"]
         }
 
 whiteSpace :: P ()
@@ -54,52 +51,28 @@ reserved = Tok.reserved lexer
 -- Parser de estilos
 -----------------------
 
-styleHeredits :: P StyleName
-styleHeredits = (do  reserved "hereda"
-                     n <- identifier
-                     return n)
-                <|>  return ""
+styleDescription :: P String
+styleDescription = many1 (oneOf (['a'..'z']++['A'..'Z']++['0'..'9']))
 
-styleSize :: P Size
-styleSize = (do  reserved "tamaño"
-                 t <- natural
-                 return t)
-            <|>  return 12
-                
-styleFont :: P Font
-styleFont = (do  reserved "fuente"
-                 f <- identifier
-                 return f)
-            <|>  return "Arial"
-    
-styleColor :: P Color
-styleColor = (do reserved "color"
-                 c <- identifier -- agregar opcion de RGB usando parens?
-                 return c)
-             <|> return "Negro"
-    
-styleAlling :: P (String, String)
-styleAlling = (do reserved "alineacion"
-                  h <- identifier
-                  v <- identifier
-                  return (h, v))
-              <|> return ("Left", "Middle")
+styleParameter :: P String
+styleParameter = many1 (oneOf (['a'..'z']++['A'..'Z']))
 
-styleDef :: P Style
-styleDef = do
-            h <- styleHeredits
-            s <- styleSize
-            f <- styleFont
-            c <- styleColor
-            a <- styleAlling
-            return (St h s f c a)
+styleDef' :: P (String,String)
+styleDef' = do name <- styleParameter
+               whiteSpace
+               desc <- styleDescription
+               oneOf "\n"
+               return (name,desc)
+
+styleDef :: P StyleParameters
+styleDef = many styleDef'
                  
-styleDecls :: P [(StyleName, Style)]
+styleDecls :: P StyleDict
 styleDecls =  do  reserved "/estilos"
                   many (do  nombre <- angles $ identifier
-                          --let de = (St "" 12 "" "" ("",""))
-                            de <- styleDef
-                            return (nombre,de))
+                            params <- styleDef
+                            many (oneOf "\n")
+                            return (nombre,params) )
 
                     
 -----------------------
@@ -155,7 +128,7 @@ title :: P Title
 title = do  reserved "/titulo"
             s <- addStyle
             t <- formattedTextL
-            reserved "\n"
+            many (oneOf "\n")
             return (T t s)
 
 -----------------------
@@ -177,7 +150,7 @@ tableRow = do
             xs <- many (do  reserved ";"
                             x' <- formattedTextL
                             return x')
-            reserved "\n"
+            many (oneOf "\n")
             return (Tr s (x:xs))
 
 table :: P SectionBody
@@ -190,14 +163,14 @@ image :: P SectionBody
 image = do  reserved "/imagen"
             s <- addStyle
             img <- many (oneOf (['a'..'z']++['A'..'Z']++['0'..'9']++":$-_.!*'(),/"))
-            reserved "\n"
+            many (oneOf "\n")
             return (Image s img)
 
 item :: P [FormattedText]
 item = do
         reserved ":"
         i <- formattedTextL
-        reserved "\n"
+        many (oneOf "\n")
         return i
 
 items :: P SectionBody
@@ -214,7 +187,7 @@ vspace = do reserved "/espacio"
 paragraph :: P SectionBody
 paragraph = do  s <- addStyle
                 ft <- formattedTextL
-                reserved "\n"
+                many (oneOf "\n")
                 return (Paragraph s ft)
 
 sectionBody :: P SectionBody
@@ -230,7 +203,7 @@ section :: Int -> P Section
 section i = do  (repeater i sectionP)
                 s <- addStyle
                 t <- formattedTextL
-                reserved "\n"
+                many (oneOf "\n")
                 sd <- many (sectionDef i)
                 return (S (T t s) sd)
 
@@ -249,7 +222,7 @@ document = do  t <- title
                s <- sections
                return (D t s)
               
-file :: P ([(StyleName, Style)], Document)
+file :: P (StyleDict, Document)
 file = do   s <- styleDecls
             d <- document
             return (s,d)
@@ -257,8 +230,5 @@ file = do   s <- styleDecls
 runP :: P a -> String -> String -> Either ParseError a
 runP p s filename = runParser (whiteSpace *> p <* eof) () filename s
 
-fileParse :: String -> ([(StyleName, Style)], Document)
-fileParse s = case runP file s "" of
-                Right t -> t
-                --Left e -> []
-                Left e -> ([], D (T [] "x") [])
+fileParse :: String -> Either ParseError (StyleDict, Document)
+fileParse s = runP file s ""

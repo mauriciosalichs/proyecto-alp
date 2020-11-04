@@ -12,7 +12,10 @@ main = do
         let input = head args
         let output = last args
         x <- (readFile input)
-        let (styles, doc) = fileParse x
-        let html = build doc
-        writeFile output html
-        return ()
+        case fileParse x of
+             Left e             -> do   print e
+                                        return ()
+             Right (styles,doc) -> do   let html = build doc
+                                        writeFile output html
+                                        return ()
+        
