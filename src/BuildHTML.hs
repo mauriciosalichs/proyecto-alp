@@ -28,10 +28,10 @@ table [] = ""
 table ((Tr _ cs) : ts) = "<tr>" ++ tableRow cs ++ "</tr>" ++ table ts
 
 sectionBody :: [Int] -> SectionBody -> String
-sectionBody _ (Paragraph p) = "<p>" ++ text p ++ "</p>\n"
-sectionBody _ (Items i) = "<ul>\n" ++ items i ++ "</ul>\n"
-sectionBody _ (Image i) = "<img src=\"" ++ i ++ "\" alt\"\">\n"
-sectionBody _ (Table t) = "<table>\n" ++ table t ++ "</table>\n"
+sectionBody _ (Paragraph _ p) = "<p>" ++ text p ++ "</p>\n"
+sectionBody _ (Items _ i) = "<ul>\n" ++ items i ++ "</ul>\n"
+sectionBody _ (Image _ i) = "<img src=\"" ++ i ++ "\" alt\"\">\n"
+sectionBody _ (Table _ t) = "<table>\n" ++ table t ++ "</table>\n"
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
@@ -39,22 +39,22 @@ chapter [] = ""
 chapter (x:xs) = show x ++ "." ++ chapter xs
 
 title :: [Int] -> Title -> String
-title n (t, _) = let p = show ((length n) + 1)
+title n (T t _) = let p = show ((length n) + 1)
                  in "<h"++ p ++">" ++ chapter (reverse n) ++ " " ++ text t ++ "</h"++ p ++">\n"
 
-sectionDef :: [Int] -> [(SectionBody, StyleName)] -> String
+sectionDef :: [Int] -> [SectionBody] -> String
 sectionDef _ [] = ""
-sectionDef n ((sb,_):xs) = sectionBody n sb ++ sectionDef n xs
+sectionDef n (x:xs) = sectionBody n x ++ sectionDef n xs
                             
 section :: [Int] -> Section -> String
-section n (t,sb) = title n t ++ sectionDef n sb
+section n (S t sb) = title n t ++ sectionDef n sb
 
 sections :: [Int] -> [Section] -> String
 sections _ [] = ""
 sections n@(i:is) (x:xs) = section n x ++ sections ((i+1):is) xs
 
 build :: Document -> String
-build (t,ss) =  "<!DOCTYPE html>\n<body>\n"
+build (D t ss) =  "<!DOCTYPE html>\n<body>\n"
                 ++ (title [] t)
                 ++ sections [1] ss
                 ++ "</body>"

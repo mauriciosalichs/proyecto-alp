@@ -30,16 +30,13 @@ data TableRow =
 type Tbl = [TableRow]
   
 data SectionBody =
-    Paragraph Text
-  | Table Tbl
-  | Image Img
-  | Items [Text]
+    Paragraph StyleName Text
+  | Table StyleName Tbl
+  | Image StyleName Img
+  | Items StyleName [Text]
   | VSpace Space
   | Subsections [Section]
 
-
--- tipos principales. modificar para no usar tantas tuplas en esta parte
-
-type Title = (Text, StyleName)
-type Section = (Title, [(SectionBody, StyleName)])
-type Document = (Title, [Section])
+data Title = T { ttext :: Text, tstyle :: StyleName }
+data Section = S { stitle :: Title, sbody :: [SectionBody] }
+data Document = D { dtitle :: Title, dbody :: [Section] }

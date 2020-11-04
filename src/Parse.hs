@@ -156,7 +156,7 @@ title = do  reserved "/titulo"
             s <- addStyle
             t <- formattedTextL
             reserved "\n"
-            return (t,s)
+            return (T t s)
 
 -----------------------
 -- Paser de secciones
@@ -182,14 +182,16 @@ tableRow = do
 
 table :: P SectionBody
 table = do  reserved "/tabla"
+            s <- addStyle
             trs <- many tableRow
-            return (Table trs)
+            return (Table s trs)
 
 image :: P SectionBody
 image = do  reserved "/imagen"
+            s <- addStyle
             img <- many (oneOf (['a'..'z']++['A'..'Z']++['0'..'9']++":$-_.!*'(),/"))
             reserved "\n"
-            return (Image img)
+            return (Image s img)
 
 item :: P [FormattedText]
 item = do
@@ -200,8 +202,9 @@ item = do
 
 items :: P SectionBody
 items = do  reserved "/items"
+            s <- addStyle
             is <- many item
-            return (Items is)
+            return (Items s is)
 
 vspace :: P SectionBody
 vspace = do reserved "/espacio"
@@ -209,23 +212,19 @@ vspace = do reserved "/espacio"
             return (VSpace n)
             
 paragraph :: P SectionBody
-paragraph = do  ft <- formattedTextL
+paragraph = do  s <- addStyle
+                ft <- formattedTextL
                 reserved "\n"
-                return (Paragraph ft)
+                return (Paragraph s ft)
 
 sectionBody :: P SectionBody
 sectionBody = table <|> image <|> items <|> vspace <|> paragraph
-
-actualSection :: P (SectionBody, StyleName)
-actualSection = do  s <- addStyle
-                    sb <- sectionBody
-                    return (sb,s)
                  
-sectionDef :: Int -> P (SectionBody, StyleName)
-sectionDef i = try actualSection
+sectionDef :: Int -> P SectionBody
+sectionDef i = try sectionBody
                <|> try (do
                             ss <- many1 (section (i+1))
-                            return (Subsections ss, ""))
+                            return (Subsections ss))
 
 section :: Int -> P Section
 section i = do  (repeater i sectionP)
@@ -233,7 +232,7 @@ section i = do  (repeater i sectionP)
                 t <- formattedTextL
                 reserved "\n"
                 sd <- many (sectionDef i)
-                return ((t,s),sd)
+                return (S (T t s) sd)
 
 sections :: P [Section]
 sections = do
@@ -248,7 +247,7 @@ sections = do
 document :: P Document
 document = do  t <- title
                s <- sections
-               return (t,s)
+               return (D t s)
               
 file :: P ([(StyleName, Style)], Document)
 file = do   s <- styleDecls
@@ -262,4 +261,4 @@ fileParse :: String -> ([(StyleName, Style)], Document)
 fileParse s = case runP file s "" of
                 Right t -> t
                 --Left e -> []
-                Left e -> ([], (([],"x"),[]))
+                Left e -> ([], D (T [] "x") [])
