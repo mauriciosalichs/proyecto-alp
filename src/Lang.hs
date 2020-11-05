@@ -1,23 +1,22 @@
 module Lang where
 
 type StyleName = String
-type Size = Integer
+type Size = String --Integer
 type Space = Integer
 type Font = String
 type Img = String
 type Color = String -- ver si puede ser RGB (Int, Int, Int)
-
-data HAllignment = ALeft | ARight | ACenter | AJustified
-data VAllignment = ATop | AMiddle | ABottom
-type Allignment = (HAllignment, VAllignment)
+type Allignment = String
+--data Allignment = ALeft | ARight | ACenter | AJustified
   
 -- | Tipo de Estilos
 data Style = 
       None  
-    | St { size :: Size, font :: Font, color :: Color, allignment :: (String, String) }
+    | St { size :: Size, font :: Font, color :: Color, allignment :: Allignment }
 
 type StyleParameters = [(String,String)]
 type StyleDict = [(StyleName, StyleParameters)]
+type StyleDict' = [(StyleName, Style)]
 
 data FormattedText = 
     SimpleText String
