@@ -16,8 +16,8 @@ main = do
         case fileParse x of
              Left e             -> do   print e
                                         return ()
-             Right (styles,doc) -> do   let styl = processStyle styles
-                                            html = build doc --styl
+             Right (styles,doc) -> do   let styl = processStyle styles []
+                                            html = build doc styl
                                         writeFile output html
                                         return ()
         
