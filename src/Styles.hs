@@ -1,8 +1,22 @@
 module Styles where 
 import Lang
 
+defaultSize :: Size
+defaultSize = "12"
+
+defaultFont :: Font
+defaultFont = "Arial"
+
+defaultColor :: Color
+defaultColor = "Black"
+
+defaultAllignment :: Allignment
+defaultAllignment = "Left"
+
+
 defaultStyle :: Style
-defaultStyle = St "12" "Arial" "Black" "Left"
+defaultStyle = St defaultSize defaultFont defaultColor defaultAllignment
+
 
 getStyle :: StyleName -> StyleDict' -> Style
 getStyle s d = case lookup s d of
