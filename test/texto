@@ -1,23 +1,23 @@
 /estilos
 
 <Estandar> # La que se usa por defecto si no se indica una en el cuerpo
-tamaño 20
-fuente TimesNewRoman
-color Negro
-alineacion Izquierda Centro
+tamano 20
+fuente Verdana
+color red
+alineacion Left
 
 <FuenteA>
-tamaño 23
-fuente Arial
+tamano 23
+fuente Courier
 color Rojo
-alineacion Centro Centro
+alineacion Center
 
 <FuenteB>
 hereda FuenteA
-tamaño 13
+tamano 13
 
 <FuenteC>
-color Verde
+color green
 
 /titulo Texto de prueba.
 
@@ -27,18 +27,18 @@ color Verde
 
 Parrafo *de prueba*.
 
-<FuenteA> /items
+/items <FuenteA>
 : Ejemplo _de texto en cursiva_.
 : Ejemplo de [http://www.google.com un link].
 : Un *_ultimo_* ejemplo.
 
 /tabla
 : Rosario ; Buenos Aires ; Cordoba
-: 45 ; 243 ; 11
+: <FuenteC> 45 ; 243 ; 11
 
 Otro parrafo de prueba.
 
-~ Segundo capitulo.
+~ <Estandar> Segundo capitulo.
 
 /imagen
 face.png
