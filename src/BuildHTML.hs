@@ -1,6 +1,9 @@
-module BuildHTML (build) where
+module BuildHTML (genHtml) where
 
 import Lang
+import Control.Monad.Reader
+
+type StyledText = Reader StyleDict' String
 
 ft :: FormattedText -> String
 ft (SimpleText t) = t
@@ -16,12 +19,13 @@ createStyle (St s f c a) = " style=\""
                         ++ "color:" ++ c ++ ";"
                         ++ "text-align:" ++ a ++ ";\""
 
-addStyle :: StyleName -> StyleDict' -> String
-addStyle s d = case lookup s d of
-                    Nothing -> s -- error "No existe el tipo s"
-                    Just st -> createStyle st
+addStyle :: StyleName -> StyledText
+addStyle s = do d <- ask
+                case lookup s d of
+                    Nothing -> return s -- error "No existe el tipo s"
+                    Just st -> return (createStyle st)
 
--- usar FOLD
+    -- usar FOLD
 
 text :: [FormattedText] -> String
 text [] = ""
@@ -35,38 +39,51 @@ tableRow :: [Text] -> String
 tableRow [] = ""
 tableRow (x:xs) = "<td>" ++ text x ++ "</td>" ++ tableRow xs
 
-table :: [TableRow] -> StyleDict' -> String
-table [] _ = ""
-table ((Tr s cs) : ts) d = "<tr" ++ addStyle s d ++ ">" ++ tableRow cs ++ "</tr>" ++ table ts d
+table :: [TableRow] -> StyledText
+table [] = return ""
+table ((Tr n cs) : ts) = do s <- addStyle n
+                            rt <- table ts
+                            return ("<tr" ++ s ++ ">" ++ tableRow cs ++ "</tr>" ++ rt)
 
-sectionBody :: [Int] -> SectionBody -> StyleDict' -> String
-sectionBody _ (Paragraph s p) d = "<p" ++ addStyle s d ++ ">" ++ text p ++ "</p>\n"
-sectionBody _ (Items s i) d = "<ul" ++ addStyle s d ++ ">\n" ++ items i ++ "</ul>\n"
-sectionBody _ (Image s i) d = "<img src=\"" ++ i ++ "\" alt\"\">\n"
-sectionBody _ (Table s t) d = "<table" ++ addStyle s d ++ ">\n" ++ table t d ++ "</table>\n"
-sectionBody n (Subsections s) d = sections (1:n) s d
+sectionBody :: [Int] -> SectionBody -> StyledText
+sectionBody _ (Paragraph n p) = addStyle n >>= (\s -> return ("<p" ++ s ++ ">" ++ text p ++ "</p>\n"))
+sectionBody _ (Items n i) = addStyle n >>= (\s -> return ("<ul" ++ s ++ ">\n" ++ items i ++ "</ul>\n"))
+sectionBody _ (Table n t) = do s <- addStyle n
+                               tc <- table t
+                               return ("<table" ++ s ++ ">\n" ++ tc ++ "</table>\n")
+sectionBody _ (Image n i) = return ("<img src=\"" ++ i ++ "\" alt\"\">\n")
+sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
 chapter [] = ""
 chapter (x:xs) = show x ++ "." ++ chapter xs
 
-title :: [Int] -> Title -> StyleDict' -> String
-title n (T t s) d = let p = show ((length n) + 1)
-                    in "<h"++ p ++ addStyle s d ++ ">" ++ chapter (reverse n) ++ " " ++ text t ++ "</h"++ p ++">\n"
+title :: [Int] -> Title -> StyledText
+title n (T t s) = do let p = show ((length n) + 1)
+                     sty <- addStyle s
+                     return ("<h"++ p ++ sty ++ ">" ++ chapter (reverse n) ++ " " ++ text t ++ "</h"++ p ++">\n")
 
-sectionDef :: [Int] -> [SectionBody] -> StyleDict' -> String
-sectionDef _ [] _ = ""
-sectionDef n (x:xs) d = sectionBody n x d ++ sectionDef n xs d
+sectionDef :: [Int] -> [SectionBody] -> StyledText
+sectionDef _ [] = return ""
+sectionDef n (x:xs) = do sb <- sectionBody n x
+                         sd <- sectionDef n xs
+                         return (sb ++ sd)
                             
-section :: [Int] -> Section -> StyleDict' -> String
-section n (S t sb) d = title n t d ++ sectionDef n sb d
+section :: [Int] -> Section -> StyledText
+section n (S t sb) = do tit <- title n t
+                        sd <- sectionDef n sb
+                        return (tit ++ sd)
 
-sections :: [Int] -> [Section] -> StyleDict' -> String
-sections _ [] _ = ""
-sections n@(i:is) (x:xs) d = section n x d ++ sections ((i+1):is) xs d
+sections :: [Int] -> [Section] -> StyledText
+sections _ [] = return ""
+sections n@(i:is) (x:xs) = do s <- section n x
+                              ss <- sections ((i+1):is) xs
+                              return (s ++ ss)
 
-build :: Document -> StyleDict' -> String
-build (D t ss) d = "<!DOCTYPE html>\n<body>\n"
-                ++ (title [] t d)
-                ++ sections [1] ss d
-                ++ "</body>"
+build :: Document -> StyledText
+build (D t ss) = do t <- title [] t
+                    s <- sections [1] ss
+                    return ("<!DOCTYPE html>\n<body>\n" ++ t ++ s ++ "</body>" )
+                            
+genHtml :: Document -> StyleDict' -> String
+genHtml s d = (runReader (build s)) d

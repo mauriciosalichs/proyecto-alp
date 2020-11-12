@@ -4,7 +4,7 @@ import System.Environment (getArgs)
 import Parse (fileParse)
 import Lang
 import Styles
-import BuildHTML (build)
+import BuildHTML (genHtml)
 
 main :: IO ()
 main = do
@@ -17,7 +17,7 @@ main = do
              Left e             -> do   print e
                                         return ()
              Right (styles,doc) -> do   let styl = processStyle styles []
-                                            html = build doc styl
+                                            html = genHtml doc styl
                                         writeFile output html
                                         return ()
         
