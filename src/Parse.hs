@@ -196,22 +196,24 @@ sectionBody = table <|> image <|> items <|> vspace <|> paragraph
 sectionDef :: Int -> P SectionBody
 sectionDef i = try sectionBody
                <|> try (do
-                            ss <- many1 (section (i+1))
+                            ss <- sections (i+1)
                             return (Subsections ss))
 
 section :: Int -> P Section
-section i = do  (repeater i sectionP)
+section i = do  try (repeater i sectionP)
                 s <- addStyle
                 t <- formattedTextL
                 many (oneOf "\n")
                 sd <- many (sectionDef i)
                 return (S (T t s) sd)
 
-sections :: P [Section]
-sections = do
-                reserved "/secciones"
-                s <- many (section 1)
-                return s
+sections :: Int -> P [Section]
+sections i = many1 (section i)
+
+body :: P [Section]
+body = do   reserved "/secciones"
+            s <- sections 1
+            return s
 
 -----------------------
 -- Paser final
@@ -219,7 +221,7 @@ sections = do
 
 document :: P Document
 document = do  t <- title
-               s <- sections
+               s <- body
                return (D t s)
               
 file :: P (StyleDict, Document)
