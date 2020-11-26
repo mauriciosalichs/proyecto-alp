@@ -6,19 +6,22 @@ import Control.Monad.Reader
 
 type StyledHtml = Reader StyleDict' Html
 
-createStyle :: Style -> [HtmlAttr]
-createStyle None = []
-createStyle (St s f c a) = [Html.size s, Html.size f, Html.color c, align a]
+createStyle :: Style -> String
+createStyle None = ""
+createStyle (St s f c a) = "font-size:" ++ s ++ "pt;"
+                        ++ "font-family:'" ++ f ++ "';"
+                        ++ "color:" ++ c ++ ";"
+                        ++ "text-align:" ++ a ++ ";"
 
 addStyle :: StyleName -> Html -> StyledHtml
 addStyle s h = do d <- ask
                   case lookup s d of
                     Nothing -> return h -- warning "No existe el tipo s"
-                    Just st -> return (Html.style (h ! (createStyle st)))
+                    Just st -> return (h ! [thestyle $ createStyle st])
 
 ft :: FormattedText -> Html
 ft (SimpleText s) = stringToHtml s
-ft (URL s t) = undefined
+ft (URL s t) = (anchor $ ft t) ! [href s]
 ft (Bold t) = bold $ ft t
 ft (Italic t) = italics $ ft t
 
@@ -41,12 +44,12 @@ sectionBody :: [Int] -> SectionBody -> StyledHtml
 sectionBody _ (Paragraph n p) = addStyle n (paragraph $ tex p)
 sectionBody _ (Items n i) = addStyle n (items i)
 sectionBody _ (Table n t) = do st <- tabl t
-                               addStyle n st
-sectionBody _ (Image n i) = return (lineToHtml ("<img src=\"" ++ i ++ "\" alt\"\">\n"))
+                               addStyle n (table st)
+sectionBody _ (Image n i) = return (image ! [src i])
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
-chapter c = foldl (++) "" (fmap show c)
+chapter c = foldr (++) " " (fmap (\x -> show x ++ ".") c)
 
 title :: [Int] -> Title -> StyledHtml
 title n (T t s) = do let header = case length n + 1 of

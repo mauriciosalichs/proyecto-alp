@@ -6,7 +6,7 @@ import Options.Applicative
 import Parse (fileParse)
 import Lang
 import Styles
-import BuildHTML (genHtml)
+import BuildIntHTML (genHtml)
 
 
 data Opts = Opts
