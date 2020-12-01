@@ -1,10 +1,16 @@
+{-# LANGUAGE OverloadedStrings #-}
 module BuildIntHTML (genHtml) where
 
 import Lang
-import Text.Html as Html
+import Data.String
+import Text.Blaze.Html5 as H
+import Text.Blaze.Html5.Attributes as A
 import Control.Monad.Reader
 
 type StyledHtml = Reader StyleDict' Html
+
+xx :: AttributeValue
+xx = "Hello World"
 
 createStyle :: Style -> String
 createStyle None = ""
@@ -17,35 +23,40 @@ addStyle :: StyleName -> Html -> StyledHtml
 addStyle s h = do d <- ask
                   case lookup s d of
                     Nothing -> return h -- warning "No existe el tipo s"
-                    Just st -> return (h ! [thestyle $ createStyle st])
+                    Just st -> return (h ! (A.style $ fromString $ createStyle st))
 
 ft :: FormattedText -> Html
-ft (SimpleText s) = stringToHtml s
-ft (URL s t) = (anchor $ ft t) ! [href s]
-ft (Bold t) = bold $ ft t
-ft (Italic t) = italics $ ft t
+ft (SimpleText s) = fromString s
+ft (URL s t) = (a $ ft t) ! (href $ fromString s)
+ft (Bold t) = b $ ft t
+ft (Italic t) = i $ ft t
 
 tex :: Text -> Html
-tex t = foldl (+++) noHtml (fmap ft t)
+tex [] = fromString ""
+tex (t:ts) = do ft t
+                tex ts
 
 items :: [Text] -> Html
-items i = foldl (+++) noHtml (fmap (li.tex) i)
+items [] = fromString ""
+items (i:is) = do li $ tex i
+                  items is
 
 tableRow :: [Text] -> Html
-tableRow tr = foldl (+++) noHtml (fmap (td.tex) tr)
+tableRow [] = fromString ""
+tableRow (tr:trs) = do td $ tex tr
+                       tableRow trs
                       
 tabl :: [TableRow] -> StyledHtml
-tabl [] = return noHtml
-tabl ((Tr n r):ts) = do t <- addStyle n ((tr.tableRow) r)
-                        rt <- tabl ts
-                        return (t +++ rt)
+tabl [] = return (fromString "")
+tabl ((Tr n r):ts) = do addStyle n ((tr.tableRow) r)
+                        tabl ts
 
 sectionBody :: [Int] -> SectionBody -> StyledHtml
-sectionBody _ (Paragraph n p) = addStyle n (paragraph $ tex p)
+sectionBody _ (Paragraph n t) = addStyle n (p $ tex t)
 sectionBody _ (Items n i) = addStyle n (items i)
 sectionBody _ (Table n t) = do st <- tabl t
                                addStyle n (table st)
-sectionBody _ (Image n i) = return (image ! [src i])
+sectionBody _ (Image n i) = return (img ! (src $ fromString i)) -- por ahora ignoramos el estilo
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
@@ -59,30 +70,30 @@ title n (T t s) = do let header = case length n + 1 of
                                     4 -> h4
                                     5 -> h5
                                     _ -> h6
-                         tc = (lineToHtml $ chapter $ reverse n) +++ tex t
-                     addStyle s (header tc)
-
+                         tc = header $ do toHtml (chapter $ reverse n)
+                                          tex t
+                     addStyle s tc
+                     
 sectionDef :: [Int] -> [SectionBody] -> StyledHtml
-sectionDef _ [] = return noHtml
-sectionDef n (x:xs) = do sb <- sectionBody n x
-                         sd <- sectionDef n xs
-                         return (sb +++ sd)
+sectionDef _ [] = return (fromString "")
+sectionDef n (x:xs) = do sectionBody n x
+                         sectionDef n xs
                             
-section :: [Int] -> Section -> StyledHtml
-section n (S t sb) = do tit <- BuildIntHTML.title n t
-                        sd <- sectionDef n sb
-                        return (tit +++ sd)
+doSection :: [Int] -> Section -> StyledHtml
+doSection n (S t sb) = do BuildIntHTML.title n t
+                          sectionDef n sb
 
 sections :: [Int] -> [Section] -> StyledHtml
-sections _ [] = return noHtml
-sections n@(i:is) (x:xs) = do s <- section n x
-                              ss <- sections ((i+1):is) xs
-                              return (s +++ ss)
+sections _ [] = return (fromString "")
+sections n@(i:is) (x:xs) = do doSection n x
+                              sections ((i+1):is) xs
 
 build :: Document -> StyledHtml
-build (D t ss) = do t <- BuildIntHTML.title [] t
-                    s <- sections [1] ss
-                    return (t +++ s)
-                            
-genHtml :: Document -> StyleDict' -> String
-genHtml s d = renderHtml $ body ((runReader (build s)) d)
+build (D t ss) = do BuildIntHTML.title [] t
+                    sections [1] ss
+         
+genHtml :: Document -> StyleDict' -> Html
+genHtml s d = docTypeHtml ((runReader (build s)) d)
+         
+--genHtml :: Document -> StyleDict' -> String
+--genHtml s d = renderHtml $ body ((runReader (build s)) d)

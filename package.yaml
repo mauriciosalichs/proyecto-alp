@@ -1,10 +1,9 @@
 name:                alp
 version:             0.1.0.0
-github:              "githubuser/alp"
 license:             BSD3
-author:              "Author name here"
-maintainer:          "example@example.com"
-copyright:           "2020 Author name here"
+author:              "Mauricio Salichs"
+maintainer:          "mauriciosalichs@gmail.com"
+copyright:           "2020 Mauricio Salichs"
 
 extra-source-files:
 - README.md
@@ -23,6 +22,11 @@ dependencies:
 - base >= 4.7 && < 5
 - parsec
 - mtl
+- blaze-builder
+- blaze-html
+- blaze-markup
+- yesod-core
+- yesod-content-pdf
 
 library:
   source-dirs: src
@@ -37,6 +41,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - alp
+    - optparse-applicative
 
 tests:
   alp-test:

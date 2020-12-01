@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main where
 
 import System.Environment (getArgs)
@@ -7,7 +9,8 @@ import Parse (fileParse)
 import Lang
 import Styles
 import BuildIntHTML (genHtml)
-
+import Yesod.Content.PDF
+import Text.Blaze.Renderer.String (renderHtml)
 
 data Opts = Opts
     { numering :: Bool
@@ -43,7 +46,9 @@ main = do
                                         return ()
              Right (styles,doc) -> do   let styl = processStyle styles []
                                             html = genHtml doc styl
-                                        writeFile output html
-                                        print (numering opts)
+                                        pdf <- html2PDF def html
+                                        let html2 = renderHtml html
+                                        writeFile output html2
+                                        --print (numering opts)
                                         return ()
         
