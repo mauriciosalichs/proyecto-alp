@@ -1,8 +1,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 module BuildIntHTML (genHtml) where
 
+import System.Environment
 import Lang
 import Data.String
+import Text.Blaze.Internal
 import Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes as A
 import Control.Monad.Reader
@@ -43,23 +45,24 @@ tableRow [] = fromString ""
 tableRow (tr:trs) = do td $ tex tr
                        tableRow trs
                       
-tabl :: [TableRow] -> Html
-tabl [] = fromString ""
-tabl ((Tr n r):ts) = do addStyle n (tr $ tableRow r)
-                        tabl ts
+tabl :: [TableRow] -> StyledHtml
+tabl [] = return (fromString "")
+tabl ((Tr n r):ts) = do tr <- addStyle n (tr $ tableRow r)
+                        t <- tabl ts
+                        return (Append tr t)
 
-sectionBody :: [Int] -> SectionBody -> Html
+sectionBody :: [Int] -> SectionBody -> StyledHtml
 sectionBody _ (Paragraph n t) = addStyle n (p $ tex t)
 sectionBody _ (Items n i) = addStyle n (items i)
-sectionBody _ (Table n t) = do let st = tabl t
+sectionBody _ (Table n t) = do st <- tabl t
                                addStyle n (table st)
-sectionBody _ (Image n i) = img ! (src $ fromString i) -- por ahora ignoramos el estilo
+sectionBody _ (Image n i) = return (img ! (src $ fromString i)) -- por ahora ignoramos el estilo
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
 chapter c = foldr (++) " " (fmap (\x -> show x ++ ".") c)
 
-title :: [Int] -> Title -> Html
+title :: [Int] -> Title -> StyledHtml
 title n (T t s) = do let header = case length n + 1 of
                                     1 -> h1
                                     2 -> h2
@@ -69,28 +72,29 @@ title n (T t s) = do let header = case length n + 1 of
                                     _ -> h6
                          tc = header $ do fromString (chapter $ reverse n)
                                           tex t
-                     tc
+                     return tc
                      
-sectionDef :: [Int] -> [SectionBody] -> Html
-sectionDef _ [] = fromString ""
-sectionDef n (x:xs) = do sectionBody n x
-                         sectionDef n xs
+sectionDef :: [Int] -> [SectionBody] -> StyledHtml
+sectionDef _ [] = return (fromString "")
+sectionDef n (x:xs) = do sb <- sectionBody n x
+                         sd <- sectionDef n xs
+                         return (Append sb sd)
                             
-doSection :: [Int] -> Section -> Html
-doSection n (S t sb) = do BuildIntHTML.title n t
-                          sectionDef n sb
+doSection :: [Int] -> Section -> StyledHtml
+doSection n (S t sb) = do tit <- BuildIntHTML.title n t
+                          sd <- sectionDef n sb
+                          return (Append tit sd)
 
-sections :: [Int] -> [Section] -> Html
-sections _ [] = fromString ""
-sections n@(i:is) (x:xs) = do doSection n x
-                              sections ((i+1):is) xs
+sections :: [Int] -> [Section] -> StyledHtml
+sections _ [] = return (fromString "")
+sections n@(i:is) (x:xs) = do s <- doSection n x
+                              ss <- sections ((i+1):is) xs
+                              return (Append s ss)
 
-build :: Document -> Html
-build (D t ss) = do BuildIntHTML.title [] t
-                    sections [1] ss
+build :: Document -> StyledHtml
+build (D t ss) = do tit <- BuildIntHTML.title [] t
+                    sec <- sections [1] ss
+                    return (Append tit sec)
          
 genHtml :: Document -> StyleDict' -> Html
-genHtml s d = docTypeHtml $ body (build s)
-         
---genHtml :: Document -> StyleDict' -> String
---genHtml s d = renderHtml $ body ((runReader (build s)) d)
+genHtml s d = docTypeHtml $ body (runReader (build s) d)

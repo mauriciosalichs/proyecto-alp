@@ -5,12 +5,13 @@ module Main where
 import System.Environment (getArgs)
 import Data.Semigroup ((<>))
 import Options.Applicative
-import Parse (fileParse)
 import Lang
 import Styles
+import Parse (fileParse)
 import BuildIntHTML (genHtml)
-import Yesod.Content.PDF
 import Text.Blaze.Renderer.String (renderHtml)
+import Yesod.Content.PDF
+import Data.ByteString.Char8
 
 data Opts = Opts
     { numering :: Bool
@@ -40,15 +41,15 @@ main = do
         args <- getArgs
         let input = inputFile opts
         let output = outputFile opts
-        x <- (readFile input)
+        x <- (Prelude.readFile input)
         case fileParse x of
              Left e             -> do   print e
                                         return ()
              Right (styles,doc) -> do   let styl = processStyle styles []
                                             html = genHtml doc styl
-                                        pdf <- html2PDF def html
-                                        let html2 = renderHtml html
-                                        writeFile output html2
-                                        --print (numering opts)
+                                        -- agregar opciones del parser por linea de comandos y agregarlos a html2pdf
+                                        pdf <- html2PDF html
+                                        Prelude.writeFile (output++".html") (renderHtml html)
+                                        Data.ByteString.Char8.writeFile (output++".pdf") (pdfBytes pdf)
                                         return ()
         
