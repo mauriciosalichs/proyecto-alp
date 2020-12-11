@@ -3,20 +3,22 @@
 module Main where
 
 import System.Environment (getArgs)
-import System.Directory (getCurrentDirectory)
 import Data.Semigroup ((<>))
 import Options.Applicative
+
 import Lang
+import Lib
 import Styles
 import Parse (fileParse)
 import BuildIntHTML (genHtml)
+
 import Text.Blaze.Renderer.String (renderHtml)
 import Yesod.Content.PDF
 import Data.ByteString.Char8 (writeFile)
 
 data Opts = Opts
-    { numering :: Bool
-    , pageFormat :: String
+    { oLandscape :: Bool
+    , oPageSize :: String
     , inputFile :: !String
     , outputFile :: String
     }
@@ -31,7 +33,8 @@ optsParser =
 
 programOptions :: Parser Opts
 programOptions =
-    Opts <$> switch (long "numeracion" <> short 'n' <> help "Ennumera las páginas") <*> 
+    Opts <$>
+    switch (long "paisaje" <> short 'p' <> help "Orienta la página en Paisaje") <*> 
     strOption (long "formato" <> short 'f' <> value "a4" <> help "Formato de la página") <*>
     strArgument (help "Archivo de origen") <*>
     strArgument (value "test/output.html" <> help "Archivo salida")
@@ -46,23 +49,17 @@ main = do
         case fileParse x of
              Left e             -> do   print e
                                         return ()
-             Right (styles,doc) -> do   cPath <- getCurrentDirectory
+             Right (styles,doc) -> do   doc' <- absImgPathD input doc
+                                        pageSize <- mkPageSize (oPageSize opts)
                                         let styl = processStyle styles []
-                                            tPath = cPath ++ "/" ++ trimUpTo '/' (reverse input)
-                                            doc' = absImgPathD tPath doc -- para convertir a pdf, es necesario que las rutas de las imagenes sean paths absolutos
                                             html = genHtml doc' styl
-                                        -- agregar opciones del parser por linea de comandos y agregarlos a html2pdf
-                                        pdf <- html2PDF def html
-                                        Prelude.writeFile (output++".html") (renderHtml html)
+                                            orientation = if (oLandscape opts) then Landscape else Portrait
+                                            -- ...
+                                            opc = def { wkOrientation = orientation,
+                                                        wkPageSize = pageSize,
+                                                        wkCopies = 5
+                                                }
+                                        pdf <- html2PDF opc html
+                                        --Prelude.writeFile (output++".html") (renderHtml html)
                                         Data.ByteString.Char8.writeFile (output++".pdf") (pdfBytes pdf)
                                         return ()
-        
-absImgPathD :: String -> Document -> Document
-absImgPathD p (D t s) = D t $ Prelude.map (absImgPathS p) s
-    where absImgPathS p (S t sb) = S t $ Prelude.map (absImgPathSB p) sb
-          absImgPathSB p (Image n s) = Image n $ p ++ s
-          absImgPathSB _ sb = sb
-          
-trimUpTo :: Char -> String -> String
-trimUpTo _ [] = []
-trimUpTo c xs = if c == head xs then reverse xs else trimUpTo c $ tail xs
