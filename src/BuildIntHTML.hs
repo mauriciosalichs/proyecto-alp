@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 module BuildIntHTML (genHtml) where
 
-import System.Environment
 import Lang
 import Data.String
 import Text.Blaze.Internal
@@ -9,7 +9,7 @@ import Text.Blaze.Html5 as H
 import Text.Blaze.Html5.Attributes as A
 import Control.Monad.Reader
 
-type StyledHtml = Reader StyleDict' Html
+type StyledHtml = ReaderT StyleDict' MarkupM ()
 
 createStyle :: Style -> String
 createStyle None = ""
@@ -21,8 +21,8 @@ createStyle (St s f c a) = "font-size:" ++ s ++ "pt;"
 addStyle :: StyleName -> Html -> StyledHtml
 addStyle s h = do d <- ask
                   case lookup s d of
-                    Nothing -> return h -- warning "No existe el tipo s"
-                    Just st -> return (h ! (A.style $ fromString $ createStyle st))
+                    Nothing -> lift h -- warning "No existe el tipo s"
+                    Just st -> lift $ h ! (A.style $ fromString $ createStyle st)
 
 ft :: FormattedText -> Html
 ft (SimpleText s) = fromString s
@@ -45,18 +45,22 @@ tableRow [] = fromString ""
 tableRow (tr:trs) = do td $ tex tr
                        tableRow trs
                       
-tabl :: [TableRow] -> StyledHtml
-tabl [] = return (fromString "")
-tabl ((Tr n r):ts) = do tr <- addStyle n (tr $ tableRow r)
-                        t <- tabl ts
-                        return (Append tr t)
+--tabl :: [TableRow] -> StyledHtml
+--tabl [] = lift $ fromString ""
+--tabl ((Tr n r):ts) = do addStyle n (tr $ tableRow r)
+--                        tabl ts
+
+-- por ahora ignoramos el estilo de cada fila
+tabl :: [TableRow] -> Html
+tabl [] = fromString ""
+tabl ((Tr _ r):ts) = do tr $ tableRow r
+                        tabl ts
 
 sectionBody :: [Int] -> SectionBody -> StyledHtml
 sectionBody _ (Paragraph n t) = addStyle n (p $ tex t)
-sectionBody _ (Items n i) = addStyle n (items i)
-sectionBody _ (Table n t) = do st <- tabl t
-                               addStyle n (table st)
-sectionBody _ (Image n i) = return (img ! (src $ fromString i)) -- por ahora ignoramos el estilo
+sectionBody _ (Items n i) = addStyle n $ items i
+sectionBody _ (Table n t) = addStyle n $ table $ tabl t
+sectionBody _ (Image _ i) = lift $ img ! (src $ fromString i) -- por ahora ignoramos el estilo
 sectionBody n (Subsections s) = sections (1:n) s
 
 chapter :: [Int] -> String
@@ -72,29 +76,25 @@ title n (T t s) = do let header = case length n + 1 of
                                     _ -> h6
                          tc = header $ do fromString (chapter $ reverse n)
                                           tex t
-                     return tc
+                     lift tc
                      
 sectionDef :: [Int] -> [SectionBody] -> StyledHtml
-sectionDef _ [] = return (fromString "")
-sectionDef n (x:xs) = do sb <- sectionBody n x
-                         sd <- sectionDef n xs
-                         return (Append sb sd)
+sectionDef _ [] = lift $ fromString ""
+sectionDef n (x:xs) = do sectionBody n x
+                         sectionDef n xs
                             
 doSection :: [Int] -> Section -> StyledHtml
-doSection n (S t sb) = do tit <- BuildIntHTML.title n t
-                          sd <- sectionDef n sb
-                          return (Append tit sd)
+doSection n (S t sb) = do BuildIntHTML.title n t
+                          sectionDef n sb
 
 sections :: [Int] -> [Section] -> StyledHtml
-sections _ [] = return (fromString "")
-sections n@(i:is) (x:xs) = do s <- doSection n x
-                              ss <- sections ((i+1):is) xs
-                              return (Append s ss)
+sections _ [] = lift $ fromString ""
+sections n@(i:is) (x:xs) = do doSection n x
+                              sections ((i+1):is) xs
 
 build :: Document -> StyledHtml
-build (D t ss) = do tit <- BuildIntHTML.title [] t
-                    sec <- sections [1] ss
-                    return (Append tit sec)
-         
+build (D t ss) = do BuildIntHTML.title [] t
+                    sections [1] ss
+
 genHtml :: Document -> StyleDict' -> Html
-genHtml s d = docTypeHtml $ body (runReader (build s) d)
+genHtml s d = docTypeHtml $ body (runReaderT (build s) d)
