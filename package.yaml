@@ -23,11 +23,9 @@ dependencies:
 - directory
 - parsec
 - mtl
-- blaze-builder
 - blaze-html
 - blaze-markup
 - bytestring
-- yesod-core
 - yesod-content-pdf
 
 library:
