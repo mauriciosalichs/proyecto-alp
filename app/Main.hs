@@ -8,7 +8,7 @@ import Options.Applicative
 
 import Lang
 import Lib
-import Styles
+import Styles (processStyle)
 import Parse (fileParse)
 import BuildIntHTML (genHtml)
 
@@ -18,7 +18,10 @@ import Data.ByteString.Char8 (writeFile)
 
 data Opts = Opts
     { oLandscape :: Bool
+    , oTitleBreak :: Bool
     , oPageSize :: String
+    , oVMargin :: String
+    , oHMargin :: String
     , inputFile :: !String
     , outputFile :: String
     }
@@ -27,17 +30,20 @@ optsParser :: ParserInfo Opts
 optsParser =
     info
         (helper <*> programOptions)
-        (fullDesc <> progDesc "Introduzca el nombre del archivo origen y el nombre del archivo salida" <>
+        (fullDesc <> progDesc "Introduzca el nombre del archivo origen y (opcionlamente) el nombre del archivo salida." <>
             header
-                "Generador de documentos HTML")
+                "Generador de documentos HTML.")
 
 programOptions :: Parser Opts
 programOptions =
     Opts <$>
-    switch (long "paisaje" <> short 'p' <> help "Orienta la página en Paisaje") <*> 
-    strOption (long "formato" <> short 'f' <> value "a4" <> help "Formato de la página") <*>
+    switch (long "paisaje" <> short 'p' <> help "Orienta la página en formato paisaje.") <*> 
+    switch (long "titulo" <> short 't' <> help "La primer página es solo el título.") <*> 
+    strOption (long "formato" <> short 'f' <> value "a4" <> help "Formato de la página. Opciones posibles: \"a4\", \"carta\" o configurar manualmente con el formato 'largo ancho' (en cm).") <*>
+    strOption (long "margenv" <> value "1" <> help "Margenes verticales (en cm).") <*>
+    strOption (long "margenh" <> value "1" <> help "Margenes horizontales (en cm).") <*>
     strArgument (help "Archivo de origen") <*>
-    strArgument (value "test/output.html" <> help "Archivo salida")
+    strArgument (value "output" <> help "Archivo salida.")
 
 main :: IO ()
 main = do
@@ -51,14 +57,21 @@ main = do
                                         return ()
              Right (styles,doc) -> do   doc' <- absImgPathD input doc
                                         pageSize <- mkPageSize (oPageSize opts)
-                                        let styl = processStyle styles []
-                                            html = genHtml doc' styl
+                                        vMargin <- mkMargin (oVMargin opts)
+                                        hMargin <- mkMargin (oHMargin opts)
+                                        styl <- processStyle styles []
+                                        let tb = (oTitleBreak opts)
                                             orientation = if (oLandscape opts) then Landscape else Portrait
-                                            -- ...
+                                            html = genHtml doc' styl tb
+                                            
                                             opc = def { wkOrientation = orientation,
                                                         wkPageSize = pageSize,
-                                                        wkCopies = 5
+                                                        wkMarginBottom = vMargin,
+                                                        wkMarginTop = vMargin,
+                                                        wkMarginLeft = hMargin,
+                                                        wkMarginRight = hMargin
                                                 }
+
                                         pdf <- html2PDF opc html
                                         --Prelude.writeFile (output++".html") (renderHtml html)
                                         Data.ByteString.Char8.writeFile (output++".pdf") (pdfBytes pdf)

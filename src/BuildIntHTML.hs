@@ -3,6 +3,8 @@
 module BuildIntHTML (genHtml) where
 
 import Lang
+import Styles (getStyle)
+
 import Data.String
 import Text.Blaze.Internal
 import Text.Blaze.Html5 as H
@@ -10,6 +12,10 @@ import Text.Blaze.Html5.Attributes as A
 import Control.Monad.Reader
 
 type StyledHtml = ReaderT StyleDict' MarkupM ()
+
+pageBreak :: Bool -> Html
+pageBreak False = fromString ""
+pageBreak True = H.style $ fromString "h1 {page-break-after: always;}"
 
 createStyle :: Style -> String
 createStyle None = ""
@@ -20,9 +26,11 @@ createStyle (St s f c a) = "font-size:" ++ s ++ "pt;"
 
 addStyle :: StyleName -> Html -> StyledHtml
 addStyle s h = do d <- ask
-                  case lookup s d of
-                    Nothing -> lift h -- warning "No existe el tipo s"
-                    Just st -> lift $ h ! (A.style $ fromString $ createStyle st)
+                  let st = getStyle s d
+                  lift $ h ! (A.style $ fromString $ createStyle st)
+                  {-case getStyle s d of
+                       Left _   => lift $ h
+                       Right st => lift $ h ! (A.style $ fromString $ createStyle st)-}
 
 ft :: FormattedText -> Html
 ft (SimpleText s) = fromString s
@@ -76,7 +84,7 @@ title n (T t s) = do let header = case length n + 1 of
                                     _ -> h6
                          tc = header $ do fromString (chapter $ reverse n)
                                           tex t
-                     lift tc
+                     addStyle s tc
                      
 sectionDef :: [Int] -> [SectionBody] -> StyledHtml
 sectionDef _ [] = lift $ fromString ""
@@ -95,6 +103,7 @@ sections n@(i:is) (x:xs) = do doSection n x
 build :: Document -> StyledHtml
 build (D t ss) = do BuildIntHTML.title [] t
                     sections [1] ss
-
-genHtml :: Document -> StyleDict' -> Html
-genHtml s d = docTypeHtml $ body (runReaderT (build s) d)
+                    
+genHtml :: Document -> StyleDict' -> Bool -> Html
+genHtml s d t = docTypeHtml $ body $ do pageBreak t
+                                        runReaderT (build s) d
