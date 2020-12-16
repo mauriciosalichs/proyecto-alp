@@ -8,7 +8,7 @@ import Options.Applicative
 
 import Lang
 import Lib
-import Styles (processStyle)
+import Styles (processStyles)
 import Parse (fileParse)
 import BuildIntHTML (genHtml)
 
@@ -53,26 +53,28 @@ main = do
         let output = outputFile opts
         x <- (Prelude.readFile input)
         case fileParse x of
-             Left e             -> do   print e
+             Left e             -> do   print e -- Error de parseo
                                         return ()
              Right (styles,doc) -> do   doc' <- absImgPathD input doc
                                         pageSize <- mkPageSize (oPageSize opts)
                                         vMargin <- mkMargin (oVMargin opts)
                                         hMargin <- mkMargin (oHMargin opts)
-                                        styl <- processStyle styles []
-                                        let tb = (oTitleBreak opts)
-                                            orientation = if (oLandscape opts) then Landscape else Portrait
-                                            html = genHtml doc' styl tb
-                                            
-                                            opc = def { wkOrientation = orientation,
-                                                        wkPageSize = pageSize,
-                                                        wkMarginBottom = vMargin,
-                                                        wkMarginTop = vMargin,
-                                                        wkMarginLeft = hMargin,
-                                                        wkMarginRight = hMargin
-                                                }
+                                        case processStyles styles [] of
+                                             Left e -> do   putStrLn e -- Error de conversión de estilos
+                                                            return ()
+                                             Right st -> do let tb = (oTitleBreak opts)
+                                                                orientation = if (oLandscape opts) then Landscape else Portrait
+                                                                html = genHtml doc' st tb
+                                                            
+                                                                opc = def { wkOrientation = orientation,
+                                                                            wkPageSize = pageSize,
+                                                                            wkMarginBottom = vMargin,
+                                                                            wkMarginTop = vMargin,
+                                                                            wkMarginLeft = hMargin,
+                                                                            wkMarginRight = hMargin
+                                                                    }
 
-                                        pdf <- html2PDF opc html
-                                        --Prelude.writeFile (output++".html") (renderHtml html)
-                                        Data.ByteString.Char8.writeFile (output++".pdf") (pdfBytes pdf)
-                                        return ()
+                                                            pdf <- html2PDF opc html
+                                                            --Prelude.writeFile (output++".html") (renderHtml html)
+                                                            Data.ByteString.Char8.writeFile (output++".pdf") (pdfBytes pdf)
+                                                            return ()
