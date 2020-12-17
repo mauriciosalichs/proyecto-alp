@@ -28,18 +28,20 @@ El repositorio del código se puede encontrar en:\\
 \url{https://github.com/mauriciosalichs/proyecto-alp}
 
 \section{El Lenguaje}
-El lenguaje creado consta de reglas muy simples para mostrar en el PDF final. Nuevas reglas son fácilmente agregables al lenguaje. A la hora de describir el documento con el lenguaje markup, tenemos tres partes diferenciables, cada una iniciando con un comando particular:
+El lenguaje creado consta de reglas muy simples, a traves de comandos, para mostrar en el PDF final. Los comandos se usan antecedidos por una barra ($/$). Nuevas reglas son fácilmente agregables al lenguaje. A la hora de describir el documento con el lenguaje markup, tenemos tres partes diferenciables, cada una iniciando con un comando particular:
 \begin{itemize}
-    \item Una parte donde se definen los estilos que vamos a usar. Utilizamos el comando /estilos para definir todos los diferentes estilos que luego queramos usar en el documento.
-    \item Una parte donde se define el título del documento. Se utiliza el comando /titulo para definirlo.
-    \item La parte final es la descripción de las secciones del documento. Se utiliza el comando /secciones para definir esta parte.
+    \item Una parte donde se definen los estilos que vamos a usar. Utilizamos el comando \emph{estilos} para definir todos los diferentes estilos que luego queramos usar en el documento.
+    \item Una parte donde se define el título del documento. Se utiliza el comando \emph{titulo} para definirlo.
+    \item La parte final es la descripción de las secciones del documento. Se utiliza el comando \emph{secciones} para definir esta parte.
 \end{itemize}
 
 \subsection{Estilos}
 
 Para definir cada nuevo estilo, escribimos su nombre ente $< >$ y luego le damos los parámetros. Hay cuatro parámetros que podemos definir: tamaño, color, fuente y alineación. La manera es escribiendo los parámetros deseados uno abajo del otro y su definición al lado. Una opción adicional es heredar los parámetros de alguna otra fuente y luego cambiar algun parámetro adicional. Este es un pequeño ejemplo de tres estilos:
 \newpage
-\begin{minted}{bash}
+\begin{minted}{text}
+/estilos
+
 <Arial>
 tamaño 14
 color negro
@@ -58,7 +60,7 @@ Nótese que no hace falta agregar todos los parámetros para poder definir un es
 \subsection{Título}
 
 El título se escribe directamente acompañado al lado de su comando. Si se le quiere dar un estilo especial, debe precederse el nombre del estilo entre  $< >$. Dos ejemplos de títulos son:
-\begin{minted}{bash}
+\begin{minted}{text}
 \titulo Resúmen del año
 \titulo <Centrado> Resumen del año
 \end{minted}
@@ -67,11 +69,11 @@ Si se quiere que el título ocupe solo la página inicial, se setea con la llama
 
 \subsection{Secciones}
 
-Esta es la parte principal del documento, donde se describen las secciones o capítulos del mismo. Para definir secciones y subsecciones se utliza MOÑITO.
+Esta es la parte principal del documento, donde se describen las secciones o capítulos del mismo. Para definir secciones y subsecciones se utliza $_{\~\ }$ tantas veces como niveles de profundidad haya en la sección.
 
 Para una sección simple, se usa uno solo acompañado de su título. Para agregar niveles de subsección se escribe uno por cada nivel, seguido del título.  Si se le quiere dar un estilo especial, debe precederse el nombre del estilo entre  $< >$.\\
 Ejemplo:
-\begin{minted}{bash}
+\begin{minted}{text}
 ~ Primer capítulo.
     ...
 ~ ~ Primera subsección del cap.
@@ -86,20 +88,44 @@ Ejemplo:
 
 Hay cuatro tipo de bloques que podemos tener dentro del cuerpo de una sección:
 \begin{itemize}
-    \item Párrafos simples. Se escriben directamente sin ningún agregado.
-    \item Items. El comando para crearlo es 'items' y y en cada linea siguiente se escriben los items antecedidos por $:$ (dos puntos).
-    \item Imágenes. El comando para insertar una imágen es 'imagen' y luego se escribe la ruta de la imágen, tomando como referencia la ubicación donde esta el archivo fuente.
-    \item Tablas. Su comando es 'tabla' seguido de una linea para cada fila, antecedida cada una por $:$ (dos puntos). En cada linea se escriben las celdas de cada fila separados por $;$ (punto y coma).
+    \item Párrafos simples. Se escriben directamente, sin ningún comando. Ejemplo:
+    \begin{minted}{text}
+    Este es un párrafo común.
+    \end{minted}
+    \item Items. El comando para crearlo es \emph{items} y y en cada linea siguiente se escriben los items antecedidos por $:$ (dos puntos). Ejemplo:
+    \begin{minted}{text}
+    /items
+    : Rosario
+    : Cordoba
+    : Buenos Aires
+    \end{minted}
+    \item Imágenes. El comando para insertar una imágen es \emph{imagen} y luego se escribe la ruta de la imágen, tomando como referencia la ubicación donde esta el archivo fuente. Ejemplo:
+    \begin{minted}{text}
+    /imagen
+    fotos/universo.jpg
+    \end{minted}
+    \item Tablas. Su comando es \emph{tabla} seguido de una linea para cada fila, antecedida cada una por $:$ (dos puntos). En cada linea se escriben las celdas de cada fila separados por $;$ (punto y coma). Ejemplo:
+    \begin{minted}{text}
+    /tabla <ArialGrande>
+    : Rosario ; Buenos Aires ; Cordoba
+    : 45 ; 243 ; 23
+    \end{minted}
 \end{itemize}
 Todos los diferentes bloques se pueden estilizar, escribiendo despues del comando correspondiente el nombre del estilo entre $< >$.
 \\~\\
 En todo texto que haya en cualquier parte del documento, tenemos tres atributos para darles:
 \begin{itemize}
-    \item Texto en negrita. Se consigue encerrando el texto entre astériscos ($*$).
-    \item Texto en cursiva. Se consigue encerrando el texto entre guiones bajos (\_).
+    \item Texto en negrita. Se consigue encerrando el texto entre asteriscos ($*$). Ejemplo: \begin{minted}{text}
+    Este es un texto *en negrita*.
+    \end{minted}
+    \item Texto en cursiva. Se consigue encerrando el texto entre guiones bajos (\_). Ejemplo: \begin{minted}{text}
+    *Todo este texto esta en negrita _y esto también en cursiva_*.
+    \end{minted}
     \item Links. Para que un bloque de texto lleve a una URL, encerramos este texo entre corchetes. La dirección de la URL es lo primero que se escribe entre los corchetes.
+     Ejemplo: \begin{minted}{text}
+    Para visitar Google seguir [http://www.google.com este link].
+    \end{minted}
 \end{itemize}
-¿Mostrar ejemplos de todo esto?
 
 \section{Estructura de los módulos del código}
 
@@ -108,8 +134,8 @@ Tenemos cinco módulos fuente y uno principal. Los módulos son:
     \item Lang. En este módulo definimos la estructura interna de los tipos que vamos a usar. Por un lado tenemos los estilos (Style) junto con sus dos versiones de diccionarios donde se mapean los nombres de los estilos con sus definiciones. Por el otro lado tenemos el AST del documento en sí.
     \item Parse. En este módulo se define el parser que toma como entrada el archivo fuente y devuelve un diccionario de estilos preprocesado y un elemento de tipo Document, donde se guarda toda la estructura interna del documento.
     \item Styles. En este módulo tenemos las funciones necesarias para convertir el diccionario preprocesado en uno ya procesado, con los estilos bien definidos y completos.
-    \item BuildIntHTML. La librería que convierte nuestra representación interna del lenguaje markup en una representación interna de HTML5, de la librería Text.Blaze.
-    \item Lib. Una librería auxiliar con algunas funciones útiles para el módulo Main.
+    \item BuildIntHTML. El módulo que convierte nuestra representación interna del lenguaje markup en una representación interna de HTML5, del módulo Text.Blaze.Html.
+    \item Lib. Un módulo auxiliar con algunas funciones útiles para el módulo Main.
     \item Main. Nuestro módulo principal, que toma los argumentos de archivo fuente y (opcionalmente) archivo salida, y con la posibilidad de setear ciertas características de la renderización vía línea de comandos, y va haciendo un procesamiento por las distintas etapas hasta generar el archivo PDF final.
 \end{itemize}
 
@@ -118,14 +144,14 @@ Tenemos cinco módulos fuente y uno principal. Los módulos son:
 Hago un breve repaso de las diferentes versiones de la aplicación y que cambios se fueron decidiendo hacer para optimizar o hacer un poco mas elegante la estructura del código. Todas estas versiones estan etiquetadas en el Log del repositorio en Github.
 
 \subsection{Conversor básico a HTML}
-En la primer versión funcional de esta aplicación, tenemos un conversor básico que parsea el archivo fuente (con algunos errores al momento de parsear subsecciones), y un conversorde nuestro AST interno a String, creando las cadenas de texto del html manualmente. Esta versión ignora los estilos, solo se completan en una tabla preprocesada. El aspecto mas importante de esta versión y las siguientes es que aún no se renderiza a PDF, el producto final es un archivo con código HTML.
+En la primer versión funcional de esta aplicación, tenemos un conversor básico que parsea el archivo fuente (con algunos errores al momento de parsear subsecciones), y un conversor de nuestro AST interno a String, creando las cadenas de texto del HTML manualmente. Esta versión ignora los estilos, solo se completan en una tabla preprocesada. El aspecto mas importante de esta versión y las siguientes es que aún no se renderiza a PDF, el producto final es un archivo con código HTML.
 
 \subsection{Agregado de estilos al documento}
 El primer gran arreglo para esta versión fue modificar un poco el AST interno del documento y las secciones, para no abusar de las tuplas, y emprolijar un poco mas usando records. Después, se fue modificando la manera de estructurar los estilos y su diccionario (en principio había solo una versión de este).
 \\~\\
 Luego se decidió hacer dos versiones del diccionario. Una que parseara tal cual lo que aparecía en el archivo fuente, con estilos incompletos en algunos parámetros y la noción de herencia. En la versión procesada del diccionario, se elimina la noción de herencia y se le completan todos los parámetros a cada estilo, dejándolos normalizados.
 \\~\\
-Otro arreglo fue en el parser, el cual ahora retorna el error correspondiente a un archivo fuente mal escrito o con algun simbolo faltante para el correcto parseado. También se eliminó la información del estilo por defecto de este archivo, ya que es un concepto interno de Estilos y este no era el módulo correspondiente.
+Otro arreglo fue en el parser, el cual ahora retorna el error correspondiente a un archivo fuente mal escrito o con algun simbolo faltante para el correcto parseado. También se eliminó la información del estilo por defecto de este archivo, ya que es un concepto interno de Styles y este no era el módulo correspondiente.
 \\~\\
 Finalmente se agregaron los estilos al archivo HTML generado.
 
@@ -133,13 +159,13 @@ Finalmente se agregaron los estilos al archivo HTML generado.
 
 Para esta versión, el primer cambio fue utilizar la mónada Reader para llevar en un entorno común, el diccionario de estilos, en vez de arrastrarlo en todas las funciones como un argumento más. No hace falta usar la mónada State para esto, ya que el diccionario es estático. Es decir, no muta durante su uso en la fabricación del código HTML.
 \\~\\
-Como segundo cambio, se agregó la librería Options.Applicative, basada en funtores aplicativos, que además de parsear distintos tipos de opciones al correr el programa en la línea de comandos, analiza este parser para generar automáticamente una ayuda que se muestra al correr el programa con la opción --help (o al escribir mal una opción).
+Como segundo cambio, se agregó el módulo Options.Applicative, basado en funtores aplicativos, que además de parsear distintos tipos de opciones al correr el programa en la línea de comandos, analiza este parser para generar automáticamente una ayuda que se muestra al correr el programa con la opción --help (o al escribir mal una opción).
 \\~\\
-Y el gran cambio que se hizo para esta versión fue dejar de construir el código HTML a mano, y pasar a usar una representación interna de HTML definido en alguna librería de Haskell, para asi no tener que lidiar con la representación interna y poder abstraerse a la representación que nos ofrece la librería. Esto permite, entre otras cosas, poder agregar nuevas features de nuesto lenguaje markup con mas facilidad. La librería usada para esta representación es Text.Html.
+Y el gran cambio que se hizo para esta versión fue dejar de construir el código HTML a mano, y pasar a usar una representación interna de HTML definido en alguna librería de Haskell, para asi no tener que lidiar con la representación interna y poder abstraerse a la representación que nos ofrece la librería. Esto permite, entre otras cosas, poder agregar nuevas features de nuesto lenguaje markup con mas facilidad. El módulo usada para esta representación es Text.Html.
 
 \subsection{Renderización a PDF}
 
-El problema principal de usar esta librería para la representación de HTML es que no es fácil de renderizar al formato PDF, ya que no es una librería muy común. Por eso el gran cambio acá es reemplazar esta librería por Text.Blaze.Html. Este nuevo tipo es fácilmente renderizable a PDF mediante otra librería comunmente usada (Yesod.Content.PDF).
+El problema principal de usar este módulo para la representación de HTML es que no es fácil de renderizar al formato PDF. Por eso el gran cambio acá es reemplazar este módulo por Text.Blaze.Html. Este nuevo tipo Html es fácilmente renderizable a PDF mediante otro módulo comunmente usado (Yesod.Content.PDF).
 \\~\\
 Este enfoque tuvo la dificultad de necesitar cambiar la mónada Reader por el transformador de mónada ReaderT, ya que internamente el tipo Html de Blaze es una mónada aplicada a Unit y las estructuras del lenguaje se definen con notación do. Llevando esto a usar una mónada sobre otra.
 \\~\\
@@ -149,16 +175,16 @@ Con esta mónada finalmente podemos completar la aplicación, transformando la r
 
 Para concluir la aplicación, el último gran cambio es pasar ciertas características de la renderización, como por ejemplo el tamaño de página, a través de la llamada al programa. Esto también llevo a mover el parseado de estos parámetros a un módulo externo (Lib) donde también haya manejos de errores.
 \\~\\
-También se incluyeron advertencias para casos de error en las definiciones de estilos, un gran faltante de la aplicación. En principio se consideró usar alguna librería de manejo de excepciones, como por ejemplo Control.Monad.Except. Pero dado que la mayoría solo necesitan ser mensajes de advertencia que no modifiquen el flujo del programa, se optó por usar simplemente IO para notificar los malos usos. El único caso donde se necesita quizás el uso de excepciones es en la función $getStyle$, la cual es usada por BuildIntHTML y aún no cuenta con un mensaje de notificación si el usuario intenta usar un estilo inexistente.
+También se incluyeron errores para casos de error en las definiciones de estilos, en el módulo \emph{Styles}, un gran faltante de la aplicación. Estos errores finalmente son manejados en el módulo \emph{main}, para que la mónada IO los maneje.
 
 \section{Manejo del proyecto y uso de la aplicación}
 
-Se usó el programa Stack para desarrollar el proyecto, ya que resultó muy cómodo para crear su estructura automáticamente y su facilidad para agregar librerías. Para correr la aplicación, se hace la siguiente llamada:
-\begin{minted}{bash}
-stack run -- [OPCIONES] archivo_fuente [archivo salida]
+Se usó el programa Stack para desarrollar el proyecto, ya que resultó muy cómodo para crear su estructura automáticamente y su facilidad para agregar librerías. Se compila con \emph{stack build} y se instala con \emph{stack install}. Para correr la aplicación, se hace la siguiente llamada:
+\begin{minted}{text}
+alp-exe [OPCIONES] archivo_fuente [archivo salida]
 \end{minted}
 Las opciones disponibles son:
-\begin{minted}{bash}
+\begin{minted}{text}
 -p,--paisaje             Orienta la página en formato paisaje.
 -t,--titulo              Para que la primer página sea solo el título.
 -f,--formato ARG         Formato de la página. Opciones posibles: "a4",
@@ -170,11 +196,11 @@ Las opciones disponibles son:
 Las librerías usadas para poder desarrollar la aplicación fueron las siguientes:
 \begin{itemize}
     \item parsec: Librería para escribir el parser del archivo fuente.
-    \item blaze-html: Para la representación HTML de Blaze.
+    \item blaze-html: Librería que contiene el módulo Text.Blaze.Html.
     \item blaze-markup: Acceso a la representación interna de Blaze, para poder combinarla con la mónada Reader.
     \item yesod-content-pdf: Para poder generar un pdf a partir de la representación HTML de Blaze.
-    \item optparse-applicative: Usada para parsear opciones desde la línea de comando.
-    \item bytestring: Usamos su función $writeFile$ para poder escribir a un archivo a partir del pdf generado.
+    \item optparse-applicative: Contiene el módulo Options.Applicative usado para parsear opciones desde la línea de comando.
+    \item bytestring: Usamos su función \emph{writeFile} para poder escribir a un archivo a partir del pdf generado.
     \item mtl: Necesaria para el uso de la monada Reader.
     \item directory: Para obtener la ruta de la aplicación y poder generar la correcta ruta de las imágenes.
 \end{itemize}
@@ -187,7 +213,7 @@ Después de haber realizado el trabajo hasta este punto, noté que era un trabaj
 \\~\\
 El trabajo se considera terminado con las características presentadas, pero dejo a continuación algunas mejoras que se le podrían agregar:
 \begin{itemize}
-    \item Agregado de carácteres especiales del idioma español. Tanto para poder escribir correctamente el parámetro "tamaño" de los estilos (actualmente sólo se puede escribir "tamano"), como para el uso de cualquier caracter latino, hubo problemas tanto en el parser como en la renderización.
+    \item Agregado de carácteres especiales del idioma español. Tanto para poder escribir correctamente el parámetro \emph{tamaño} de los estilos (actualmente sólo se puede escribir \emph{tamano}), como para el uso de cualquier caracter latino, hubo problemas tanto en el parser como en la renderización.
     \item Bucles en la sintaxis del lenguaje. En un principio estaba previsto desarrollar el uso de bucles para algunas características en los documentos, para escribir de manera acortada, por ejemplo, tablas con datos similares o estructuras que siguen algun patrón. Esta tarea fue descartada porque en su versión simple no aportaba mucho a la expresividad del lenguaje, y en su manera mas compleja se volvía una tarea demasiado extensa de realizar.
     \item Agregado de más tipos de elementos HTML y agrandar la sintaxis del lenguaje. Extender los comandos del lenguaje con más características de HTML que fueran renderizables a PDF, como por ejemplo listas numeradas. Esto no significaba muchos cambios complicados, mas que nada extender el AST interno, el parser y el conversor. Pero no aportaba algo académicamente, era mas de lo mismo.
     \item Mayor manejo de excepciones a la hora de encontrar errores en el archivo fuente, con mensajes más específicos para el usuario. Este cambio si hubiera aportado algo más a la aplicación y académicamente, y podría ser una buena mejora si este proyecto se continuara.
